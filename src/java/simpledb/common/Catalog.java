@@ -96,7 +96,12 @@ public class Catalog {
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
         // some code goes here
-        return this.tables.get(tableid).getTupleDesc();
+        DbFile table = this.tables.get(tableid);
+        if (table == null) {
+            throw new NoSuchElementException("No table exists");
+        } else {
+            return this.tables.get(tableid).getTupleDesc();
+        }
     }
 
     /**
