@@ -73,8 +73,7 @@ public class HeapPage implements Page {
     */
     private int getNumTuples() {        
         // some code goes here
-        return 0;
-
+        return (int) Math.floor((BufferPool.getPageSize()*8) / (this.td.getSize() * 8 + 1));
     }
 
     /**
@@ -82,10 +81,8 @@ public class HeapPage implements Page {
      * @return the number of bytes in the header of a page in a HeapFile with each tuple occupying tupleSize bytes
      */
     private int getHeaderSize() {        
-        
         // some code goes here
-        return 0;
-                 
+        return (int) Math.ceil(this.getNumTuples() / 8);
     }
     
     /** Return a view of this page before it was modified
@@ -118,7 +115,7 @@ public class HeapPage implements Page {
      */
     public HeapPageId getId() {
     // some code goes here
-    throw new UnsupportedOperationException("implement this");
+        return this.pid;
     }
 
     /**
@@ -288,7 +285,16 @@ public class HeapPage implements Page {
      */
     public int getNumEmptySlots() {
         // some code goes here
-        return 0;
+        int count = 0;
+        for (byte b : this.header) {
+            while (b != 0) {
+                if ((b & 1) == 0) {
+                    count++;
+                }
+                b >>= 1;
+            }
+        }
+        return count;
     }
 
     /**
@@ -296,7 +302,11 @@ public class HeapPage implements Page {
      */
     public boolean isSlotUsed(int i) {
         // some code goes here
-        return false;
+        int byteIndx = (int) Math.floor(i / 8);
+        if (byteIndx < 0 || byteIndx >= this.getNumTuples()) {
+            throw new RuntimeException("Received out of bound i: " + i);
+        }
+        return ((this.header[byteIndx] >> i) & 1) != 0;
     }
 
     /**
@@ -313,8 +323,34 @@ public class HeapPage implements Page {
      */
     public Iterator<Tuple> iterator() {
         // some code goes here
-        return null;
-    }
+        Iterator<Tuple> it = new Iterator<Tuple>() {
+            private int i = 0;
 
+            private boolean isBitOne(int tupleIndx) {
+                int byteIndx = (int) Math.floor(tupleIndx / 8);
+                return ((header[byteIndx] >> tupleIndx) & 1) != 0;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return i < tuples.length;
+            }
+
+            @Override
+            public Tuple next() {
+                Tuple tup = tuples[i];
+                while (this.hasNext() && !isBitOne(i)) {
+                    i++;
+                }
+                return tup;
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+        return it;
+    }
 }
 

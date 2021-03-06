@@ -220,11 +220,17 @@ public class TupleDesc implements Serializable {
      */
 
     public boolean equals(Object o) {
-        final TupleDesc other = (TupleDesc) o;
+        if (this == o) {
+            return true;
+        }
 
         if (!(o.getClass().equals(this.getClass())) 
-            || o == null
-            || this.numFields() != other.numFields()) { 
+            || o == null) { 
+            return false;
+        }
+
+        final TupleDesc other = (TupleDesc) o;
+        if (this.numFields() != other.numFields()) {
             return false;
         }
 
@@ -241,7 +247,7 @@ public class TupleDesc implements Serializable {
     public int hashCode() {
         // If you want to use TupleDesc as keys for HashMap, implement this so
         // that equal objects have equals hashCode() results
-        throw new UnsupportedOperationException("unimplemented");
+        return this.toString().hashCode();
     }
 
     /**
