@@ -33,6 +33,10 @@ public class BufferPool {
     constructor instead. */
     public static final int DEFAULT_PAGES = 50;
 
+    // BufferPool class properties
+    private final int numPages;
+    private final ConcurrentHashMap<PageId, Page> buffer;
+
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -40,6 +44,8 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         // some code goes here
+        this.numPages = numPages;
+        this.buffer = new ConcurrentHashMap<>();
     }
     
     public static int getPageSize() {
@@ -71,10 +77,28 @@ public class BufferPool {
      * @param pid the ID of the requested page
      * @param perm the requested permissions on the page
      */
-    public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
+    public Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
-        return null;
+        if (buffer.containsKey(pid)) {
+            return buffer.get(pid);
+        }
+
+        if (buffer.size() == this.numPages) {
+            throw new DbException("Too many pages");
+        } else {
+            Integer[] tableIds = Database.getCatalog().getTableIds();
+            for (Integer tableId : tableIds) {
+                try {
+                    Page page = Database.getCatalog().getDatabaseFile(tableId).readPage(pid);
+                    buffer.put(pid, page);
+                    return page;
+                } catch (Exception e) {
+                    continue;
+                }
+            }
+        }
+        throw new DbException("Page does not exist");
     }
 
     /**

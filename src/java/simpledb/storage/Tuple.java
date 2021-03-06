@@ -13,6 +13,11 @@ public class Tuple implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    // Class properties
+    private TupleDesc tupleDesc;
+    private RecordId recordId;
+    private final Field[] values;
+
     /**
      * Create a new tuple with the specified schema (type).
      *
@@ -21,7 +26,9 @@ public class Tuple implements Serializable {
      *            instance with at least one field.
      */
     public Tuple(TupleDesc td) {
-        // some code goes here
+        this.tupleDesc = td;
+        this.recordId = null;
+        this.values = new Field[td.numFields()];
     }
 
     /**
@@ -29,7 +36,7 @@ public class Tuple implements Serializable {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+        return this.tupleDesc;
     }
 
     /**
@@ -38,7 +45,7 @@ public class Tuple implements Serializable {
      */
     public RecordId getRecordId() {
         // some code goes here
-        return null;
+        return this.recordId;
     }
 
     /**
@@ -49,6 +56,7 @@ public class Tuple implements Serializable {
      */
     public void setRecordId(RecordId rid) {
         // some code goes here
+        this.recordId = rid;
     }
 
     /**
@@ -61,6 +69,12 @@ public class Tuple implements Serializable {
      */
     public void setField(int i, Field f) {
         // some code goes here
+        if (i < 0 || i >= this.values.length) {
+            throw new RuntimeException("Invalid index in setField");
+        } else if (!(f.getType().equals(this.tupleDesc.getFieldType(i)))) {
+            throw new RuntimeException("Invalid type in setField");
+        }
+        this.values[i] = f;
     }
 
     /**
@@ -71,7 +85,10 @@ public class Tuple implements Serializable {
      */
     public Field getField(int i) {
         // some code goes here
-        return null;
+        if (i < 0 || i >= this.values.length) {
+            throw new RuntimeException("Invalid index in setField");
+        }
+        return this.values[i];
     }
 
     /**
@@ -84,7 +101,11 @@ public class Tuple implements Serializable {
      */
     public String toString() {
         // some code goes here
-        throw new UnsupportedOperationException("Implement this");
+        String[] strings = new String[this.values.length];
+        for (int i = 0; i < strings.length; i++) {
+            strings[i] = this.values[i].toString();
+        }
+        return String.join("\t", strings);
     }
 
     /**
@@ -94,7 +115,25 @@ public class Tuple implements Serializable {
     public Iterator<Field> fields()
     {
         // some code goes here
-        return null;
+        Iterator<Field> it = new Iterator<Field>() {
+            private int currentIndex = 0;
+
+            @Override
+            public boolean hasNext() {
+                return currentIndex < values.length;
+            }
+
+            @Override
+            public Field next() {
+                return values[currentIndex++];
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+        return it;
     }
 
     /**
@@ -103,5 +142,6 @@ public class Tuple implements Serializable {
     public void resetTupleDesc(TupleDesc td)
     {
         // some code goes here
+        this.tupleDesc = td;
     }
 }
