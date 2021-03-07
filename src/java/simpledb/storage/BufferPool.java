@@ -91,8 +91,10 @@ public class BufferPool {
             for (Integer tableId : tableIds) {
                 try {
                     Page page = Database.getCatalog().getDatabaseFile(tableId).readPage(pid);
-                    buffer.put(pid, page);
-                    return page;
+                    if (page != null) {
+                        buffer.put(pid, page);
+                        return page;
+                    }
                 } catch (Exception e) {
                     continue;
                 }
