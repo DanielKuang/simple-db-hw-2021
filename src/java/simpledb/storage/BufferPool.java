@@ -87,17 +87,10 @@ public class BufferPool {
         if (buffer.size() == this.numPages) {
             throw new DbException("Too many pages");
         } else {
-            Integer[] tableIds = Database.getCatalog().getTableIds();
-            for (Integer tableId : tableIds) {
-                try {
-                    Page page = Database.getCatalog().getDatabaseFile(tableId).readPage(pid);
-                    if (page != null) {
-                        buffer.put(pid, page);
-                        return page;
-                    }
-                } catch (Exception e) {
-                    continue;
-                }
+            Page page = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
+            if (page != null) {
+                buffer.put(pid, page);
+                return page;
             }
         }
         throw new DbException("Page does not exist");

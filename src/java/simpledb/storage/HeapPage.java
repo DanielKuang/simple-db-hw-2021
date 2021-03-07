@@ -287,7 +287,7 @@ public class HeapPage implements Page {
         // some code goes here
         int count = 0;
         for (byte b : this.header) {
-            while (b != 0) {
+            for (int i = 0; i < 8; i++) {
                 if ((b & 1) == 0) {
                     count++;
                 }
@@ -302,11 +302,11 @@ public class HeapPage implements Page {
      */
     public boolean isSlotUsed(int i) {
         // some code goes here
-        int byteIndx = (int) Math.floor(i / 8);
+        int byteIndx = i / 8;
         if (byteIndx < 0 || byteIndx >= this.getNumTuples()) {
             throw new RuntimeException("Received out of bound i: " + i);
         }
-        return ((this.header[byteIndx] >> i) & 1) != 0;
+        return ((this.header[byteIndx] >> (i % 8)) & 1) != 0;
     }
 
     /**
@@ -326,9 +326,9 @@ public class HeapPage implements Page {
         Iterator<Tuple> it = new Iterator<Tuple>() {
             private int i = 0;
 
-            private boolean isBitOne(int tupleIndx) {
-                int byteIndx = (int) Math.floor(tupleIndx / 8);
-                return ((header[byteIndx] >> tupleIndx) & 1) != 0;
+            private boolean isBitOne(int i) {
+                int byteIndx = i / 8;
+                return ((header[byteIndx] >> (i % 8)) & 1) != 0;
             }
 
             @Override

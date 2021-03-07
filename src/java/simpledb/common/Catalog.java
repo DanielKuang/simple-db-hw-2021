@@ -148,11 +148,6 @@ public class Catalog {
         // some code goes here
         return this.namespace.get(id);
     }
-
-    // Helper function to get all tableids available in Catalog
-    public Integer[] getTableIds() {
-        return this.tables.keySet().toArray(new Integer[this.tables.size()]);
-    }
     
     /** Delete all tables from the catalog */
     public void clear() {

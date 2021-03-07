@@ -176,7 +176,11 @@ public class TupleDesc implements Serializable {
      */
     public int getSize() {
         // some code goes here TODO
-        return 0;
+        int size = 0;
+        for (TDItem item : this.items) {
+            size += item.fieldType.getLen();
+        }
+        return size;
     }
 
     /**
@@ -194,15 +198,14 @@ public class TupleDesc implements Serializable {
         Type[] newTypes = new Type[td1.numFields() + td2.numFields()];
         String[] newFields = new String[td1.numFields() + td2.numFields()];
 
-        for (int i = 0; i < td1.numFields() + td2.numFields(); i++) {
-            if (i < td1.numFields()) {
-                newTypes[i] = td1.getFieldType(i);
-                newFields[i] = td1.getFieldName(i);
-            }
-            else {
-                newTypes[i] = td2.getFieldType(i);
-                newFields[i] = td2.getFieldName(i);
-            }
+        for (int i = 0; i < td1.numFields(); i++) {
+            newTypes[i] = td1.getFieldType(i);
+            newFields[i] = td1.getFieldName(i);
+        }
+
+        for (int i = 0; i < td2.numFields(); i++) {
+            newTypes[i + td1.numFields()] = td2.getFieldType(i);
+            newFields[i + td1.numFields()] = td2.getFieldName(i);
         }
 
         return new TupleDesc(newTypes, newFields);
