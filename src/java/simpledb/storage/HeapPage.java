@@ -73,7 +73,7 @@ public class HeapPage implements Page {
     */
     private int getNumTuples() {        
         // some code goes here
-        return (int) Math.floor((BufferPool.getPageSize()*8) / (this.td.getSize() * 8 + 1));
+        return (int) Math.floor((BufferPool.getPageSize()*8.0) / (this.td.getSize() * 8.0 + 1.0));
     }
 
     /**
@@ -82,7 +82,7 @@ public class HeapPage implements Page {
      */
     private int getHeaderSize() {        
         // some code goes here
-        return (int) Math.ceil(this.getNumTuples() / 8);
+        return (int) Math.ceil(this.getNumTuples() / 8.0);
     }
     
     /** Return a view of this page before it was modified
@@ -323,34 +323,13 @@ public class HeapPage implements Page {
      */
     public Iterator<Tuple> iterator() {
         // some code goes here
-        Iterator<Tuple> it = new Iterator<Tuple>() {
-            private int i = 0;
-
-            private boolean isBitOne(int i) {
-                int byteIndx = i / 8;
-                return ((header[byteIndx] >> (i % 8)) & 1) != 0;
+        List<Tuple> tupleArray = new ArrayList<>();
+        for (int i = 0; i < tuples.length; i++) {
+            if (this.isSlotUsed(i)) {
+                tupleArray.add(tuples[i]);
             }
-
-            @Override
-            public boolean hasNext() {
-                return i < tuples.length;
-            }
-
-            @Override
-            public Tuple next() {
-                Tuple tup = tuples[i];
-                while (this.hasNext() && !isBitOne(i)) {
-                    i++;
-                }
-                return tup;
-            }
-
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
-        return it;
+        }
+        return tupleArray.iterator();
     }
 }
 

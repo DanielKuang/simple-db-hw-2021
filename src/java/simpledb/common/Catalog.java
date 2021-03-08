@@ -24,9 +24,9 @@ import java.util.stream.Collectors;
  */
 public class Catalog {
 
-    private final ConcurrentHashMap<Integer, DbFile> tables;
+    private final ConcurrentHashMap<String, DbFile> tables;
+    private final ConcurrentHashMap<String, String> primaryKeys;
     private final ConcurrentHashMap<Integer, String> namespace;
-    private final ConcurrentHashMap<Integer, String> primaryKeys;
 
     /**
      * Constructor.
@@ -35,8 +35,8 @@ public class Catalog {
     public Catalog() {
         // some code goes here
         this.tables = new ConcurrentHashMap<>();
-        this.namespace = new ConcurrentHashMap<>();
         this.primaryKeys = new ConcurrentHashMap<>();
+        this.namespace = new ConcurrentHashMap<>();
     }
 
     /**
@@ -53,10 +53,18 @@ public class Catalog {
         if (name == null) {
             throw new RuntimeException("Name is null in addTable");
         }
-        Integer fileId = file.getId();
-        this.tables.put(fileId, file);
-        this.namespace.put(fileId, name);
-        this.primaryKeys.put(fileId, pkeyField);
+        if (this.tables.containsKey(name)) {
+            for (Integer id: this.namespace.keySet()) {
+                if (this.namespace.get(id).equals(name)) {
+                    this.namespace.remove(id);
+                }
+            }
+            this.tables.remove(name);
+            this.primaryKeys.remove(name);
+        }
+        this.tables.put(name, file);
+        this.primaryKeys.put(name, pkeyField);
+        this.namespace.put(file.getId(), name);
     }
 
     public void addTable(DbFile file, String name) {
@@ -80,12 +88,14 @@ public class Catalog {
      */
     public int getTableId(String name) throws NoSuchElementException {
         // some code goes here
-        for (Integer id : this.namespace.keySet()) {
-            if (this.namespace.get(id).equals(name)) {
-                return id;
-            }
+        if (name == null) {
+            throw new NoSuchElementException();
         }
-        throw new NoSuchElementException();
+        DbFile table = this.tables.get(name);
+        if (table == null) {
+            throw new NoSuchElementException();
+        }
+        return table.getId();
     }
 
     /**
@@ -96,12 +106,11 @@ public class Catalog {
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
         // some code goes here
-        DbFile table = this.tables.get(tableid);
-        if (table == null) {
+        String tableName = this.namespace.get(tableid);
+        if (tableName == null) {
             throw new NoSuchElementException("No table exists");
-        } else {
-            return this.tables.get(tableid).getTupleDesc();
         }
+        return this.tables.get(tableName).getTupleDesc();
     }
 
     /**
@@ -112,12 +121,20 @@ public class Catalog {
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
         // some code goes here
-        return this.tables.get(tableid);
+        String tableName = this.namespace.get(tableid);
+        if (tableName == null) {
+            throw new NoSuchElementException("No table exists");
+        }
+        return this.tables.get(tableName);
     }
 
     public String getPrimaryKey(int tableid) {
         // some code goes here
-        return this.primaryKeys.get(tableid);
+        String tableName = this.namespace.get(tableid);
+        if (tableName == null) {
+            throw new NoSuchElementException("No table exists");
+        }
+        return this.primaryKeys.get(tableName);
     }
 
     public Iterator<Integer> tableIdIterator() {
@@ -153,8 +170,8 @@ public class Catalog {
     public void clear() {
         // some code goes here
         this.tables.clear();
-        this.namespace.clear();
         this.primaryKeys.clear();
+        this.namespace.clear();
     }
     
     /**

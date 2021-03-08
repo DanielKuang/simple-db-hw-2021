@@ -47,7 +47,6 @@ public class SeqScan implements OpIterator {
         this.tid = tid;
         this.tableid = tableid;
         this.tableAlias = tableAlias;
-        this.it = Database.getCatalog().getDatabaseFile(tableid).iterator(tid);
     }
 
     /**
@@ -84,7 +83,6 @@ public class SeqScan implements OpIterator {
         // some code goes here
         this.tableid = tableid;
         this.tableAlias = tableAlias;
-        this.it = Database.getCatalog().getDatabaseFile(tableid).iterator(this.tid);
     }
 
     public SeqScan(TransactionId tid, int tableId) {
@@ -93,6 +91,8 @@ public class SeqScan implements OpIterator {
 
     public void open() throws DbException, TransactionAbortedException {
         // some code goes here
+        // starting iterator, set it to class property so we can refer to it again
+        this.it = Database.getCatalog().getDatabaseFile(this.tableid).iterator(this.tid);
         this.it.open();
     }
 
@@ -108,7 +108,20 @@ public class SeqScan implements OpIterator {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return Database.getCatalog().getTupleDesc(this.tableid);
+        final TupleDesc td = Database.getCatalog().getTupleDesc(this.tableid);
+        final Iterator<TupleDesc.TDItem> tdItems = td.iterator();
+        final Type[] newTypes = new Type[td.numFields()];
+        final String[] newFields = new String[td.numFields()];
+
+        int i = 0;
+        while (tdItems.hasNext()) {
+            TupleDesc.TDItem tdItem = tdItems.next();
+            newTypes[i] = tdItem.fieldType;
+            newFields[i] = this.tableAlias + "." + tdItem.fieldName;
+            i++;
+        }
+
+        return new TupleDesc(newTypes, newFields);
     }
 
     public boolean hasNext() throws TransactionAbortedException, DbException {

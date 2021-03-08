@@ -26,7 +26,6 @@ public class HeapFile implements DbFile {
     // Heapfile class properties
     private final File f;
     private final TupleDesc td;
-    private final ConcurrentHashMap<PageId, Page> pages;
 
     /**
      * Constructs a heap file backed by the specified file.
@@ -39,7 +38,6 @@ public class HeapFile implements DbFile {
         // some code goes here
         this.f = f;
         this.td = td;
-        this.pages = new ConcurrentHashMap<>();
     }
 
     /**
@@ -79,7 +77,19 @@ public class HeapFile implements DbFile {
     // see DbFile.java for javadocs
     public Page readPage(PageId pid) {
         // some code goes here
-        return this.pages.get(pid);
+        HeapPageId hpid = (HeapPageId) pid;
+        byte[] data = new byte[BufferPool.getPageSize()];
+        int offset = BufferPool.getPageSize() * pid.getPageNumber();
+        try {
+            RandomAccessFile disk = new RandomAccessFile(this.f, "r");
+            disk.seek(offset);
+            disk.read(data);
+            disk.close();
+            return new HeapPage(hpid, data);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     // see DbFile.java for javadocs
@@ -93,7 +103,7 @@ public class HeapFile implements DbFile {
      */
     public int numPages() {
         // some code goes here
-        return pages.size();
+        return (int) Math.floor(this.f.length() / BufferPool.getPageSize());
     }
 
     // see DbFile.java for javadocs
@@ -115,37 +125,61 @@ public class HeapFile implements DbFile {
     // see DbFile.java for javadocs
     public DbFileIterator iterator(TransactionId tid) {
         // some code goes here
-        // DbFileIterator it = new DbFileIterator() {
-        //     @Override
-        //     public boolean hasNext() {
-        //         return true;
-        //     }
 
-        //     @Override
-        //     public Tuple next() {
-        //     }
+        // pageIDs start at 0 and go to HeapFile.numPages() - 1
+        final List<Tuple> allTups = new ArrayList<>();
+        for (int i = 0; i < this.numPages(); i++) {
+            try {
+                HeapPageId pid = new HeapPageId(this.getId(), i);
+                HeapPage page = (HeapPage) Database.getBufferPool().getPage(tid, pid, null);
+                Iterator<Tuple> pageIt = page.iterator();
+                while (pageIt.hasNext()) {
+                    allTups.add(pageIt.next());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
-        //     @Override
-        //     public void remove() {
-        //     }
+        DbFileIterator it = new DbFileIterator() {
+            private int indx = 0;
+            private boolean isOpen = false;
 
-        //     @Override
-        //     public void close() {
+            @Override
+            public boolean hasNext() {
+                return indx < allTups.size() && isOpen;
+            }
 
-        //     }
+            @Override
+            public Tuple next() {
+                if (!hasNext()) {
+                    if (!isOpen) {
+                        throw new NoSuchElementException("Iterator is closed");
+                    } else {
+                        throw new NoSuchElementException("Ran out of tuples to iterate");
+                    }
+                }
+                return allTups.get(indx++);
+            }
 
-        //     @Override
-        //     public void open() {
-                
-        //     }
+            @Override
+            public void close() {
+                isOpen = false;
+            }
 
-        //     @Override
-        //     public void rewind() {
-                
-        //     }
-        // };
-        // return it;
-        return null;
+            @Override
+            public void open() {
+                indx = 0;
+                isOpen = true;
+            }
+
+            @Override
+            public void rewind() {
+                indx = 0;
+            }
+        };
+        return it;
     }
+
 }
 
