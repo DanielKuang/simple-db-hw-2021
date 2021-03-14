@@ -4,7 +4,6 @@ import simpledb.common.Type;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * TupleDesc describes the schema of a tuple.
@@ -12,7 +11,7 @@ import java.util.stream.Collectors;
 public class TupleDesc implements Serializable {
 
     // TupleDesc class properties
-    public final List<TDItem> items;
+    public final TDItem[] items;
     /**
      * A help class to facilitate organizing the information of each field
      * */
@@ -52,12 +51,12 @@ public class TupleDesc implements Serializable {
 
             @Override
             public boolean hasNext() {
-                return currentIndex < items.size();
+                return currentIndex < items.length;
             }
 
             @Override
             public TDItem next() {
-                return items.get(currentIndex++);
+                return items[currentIndex++];
             }
 
             @Override
@@ -83,9 +82,9 @@ public class TupleDesc implements Serializable {
      */
     public TupleDesc(Type[] typeAr, String[] fieldAr) {
         // some code goes here
-        this.items = new ArrayList<>();
+        this.items = new TDItem[typeAr.length];
         for (int i = 0; i < typeAr.length; i++) {
-            this.items.add(new TDItem(typeAr[i], fieldAr[i]));
+            this.items[i] = new TDItem(typeAr[i], fieldAr[i]);
         }
     }
 
@@ -99,9 +98,9 @@ public class TupleDesc implements Serializable {
      */
     public TupleDesc(Type[] typeAr) {
         // some code goes here
-        this.items = new ArrayList<>();
+        this.items = new TDItem[typeAr.length];
         for (int i = 0; i < typeAr.length; i++) {
-            this.items.add(new TDItem(typeAr[i], null));
+            this.items[i] = new TDItem(typeAr[i], null);
         }
     }
 
@@ -110,7 +109,7 @@ public class TupleDesc implements Serializable {
      */
     public int numFields() {
         // some code goes here
-        return this.items.size();
+        return this.items.length;
     }
 
     /**
@@ -127,7 +126,7 @@ public class TupleDesc implements Serializable {
         if (i < 0 || i >= this.numFields()) {
             throw new NoSuchElementException();
         }
-        return this.items.get(i).fieldName;
+        return this.items[i].fieldName;
     }
 
     /**
@@ -145,7 +144,7 @@ public class TupleDesc implements Serializable {
         if (i < 0 || i >= this.numFields()) {
             throw new NoSuchElementException();
         }
-        return this.items.get(i).fieldType;
+        return this.items[i].fieldType;
     }
 
     /**
@@ -262,6 +261,10 @@ public class TupleDesc implements Serializable {
      */
     public String toString() {
         // some code goes here
-        return String.join(",", this.items.stream().map(i -> i.toString()).collect(Collectors.toList()));
+        String[] str = new String[this.items.length];
+        for (int i = 0; i < this.items.length; i++) {
+            str[i] = this.items[i].toString();
+        }
+        return String.join(",", str);
     }
 }

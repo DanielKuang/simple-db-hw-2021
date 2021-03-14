@@ -1,0 +1,91 @@
+﻿Daniel Kuang
+6.814
+SimpleDB Lab 1
+
+
+1) Describe any design decisions you made.
+
+The following are my design decisions for each part:
+
+
+Tuple and TupleDesc
+
+I decided to use static arrays to represent these two classes because we know their sizes beforehand.
+Retrievals in a static array provided an index is O(1) instead of amortized O(1) and static arrays save more
+space than dynamic arrays. Since we know these classes’ size mostly remain constant, we will exploit the benefits of static arrays.
+
+
+For Later Files
+
+In general, since I’m assuming there will be a lot of reads to the database,
+I want to ensure fast retrieval of data (ideally O(1)). Hence, the goal of my design
+is to have as many hashmaps we can because we can exploit the amortized O(1) cost of retrieval with hashmaps.
+
+
+BufferPool.java
+
+In BufferPool.java, since I know page id is unique, I set a
+concurrent hashmap keyed by page id mapping to a page. This data
+structure acts as my buffer for my buffer pool, which can support
+fast page retrieval (amortized O(1)).
+
+
+Catalog.java
+
+Similarly, I have concurrent hashmaps in Catalog.java.
+In Catalog.java, I need three hash maps because I want to manage tables,
+primary keys and their names. Since names are unique, I have two concurrent
+hash maps keyed by names and have one hash map point at tables and the other
+at primary keys. This allows retrieval of tables and primary keys (provided the table name)
+fast (amortized O(1)), but not for name retrievals.
+
+
+Fortunately, we can exploit the fact that methods that retrieve tables,
+names and primary keys are provided with a table id as the only argument. So,
+we can create another hashmap pointing table ids to names. Now, we can retrieve any
+value in amortized O(1). If we want to retrieve table id, we can just retrieve the table and
+return table.getId(), resulting in a performance of amortized O(1).
+
+
+HeapPage.java
+
+The provided structures in HeapPage are sufficient to implement all of HeapPage’s
+methods for lab 1. Hence, I only used what’s given. For the iterator, instead of creating a new iterator class,
+I added all non-empty tuples into an array list and returned the iterator of the array list. This allows me to avoid
+reimplementing methods in an iterator and guarantee correctness since we can assume ArrayList implemented its iterator correctly.
+
+
+HeapFile.java
+
+Like HeapPage, everything required to implement this class is provided.
+The only design I worked on is its iterator. Again, to simplify the process,
+I extracted all the tuples from every page in the file and added it in an array list.
+With this array list and a pointer, I can implement DbFileIterator by shifting pointers
+depending on the context (i.e. pointer set to 0 on rewind()).
+
+
+SeqScan.java
+
+Like HeapFile, everything required to implement
+this class is provided. No notable new design except using the available APIs is present.
+
+
+2) Discuss and justify any changes you made to the API.
+
+Other than calling the available APIs after adding my design choices described in question (1), 
+I did not change the given APIs in lab 1. Much of what’s required to implement is feasible by retrieving relevant
+values and calling the appropriate methods to compute a desired result.
+
+3) Describe any missing or incomplete elements of your code.
+
+As of lab 1, handling of Transaction Ids, mutation of tuples, mutation of pages and mutating the header in heap pages are missing.
+I believe they will be complete by the end of this semester since they are not necessary for lab 1.
+As of now, I believe only retrievals like retrieval of tuples, pages, tuple descriptions or files are supported.
+
+
+4) Describe how long you spent on the lab, and whether there was anything you found particularly difficult or confusing.
+
+I spent around 60 hours in this lab, mainly due to debugging and understanding what’s being asked.
+I also felt rusty in Java, so I had to do a quick review. I think the most difficult part is reading a page
+from a file because I’m not used to reading streams (I think this is my 2nd time coding to read from a file).
+The office hours helped a lot, and I appreciate the additional office hour slot.
